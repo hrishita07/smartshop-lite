@@ -2,6 +2,7 @@ const express = require('express');
 const routes = require('./routes');
 const errorHandler = require('./middleware/errorHandler');
 const logger = require('./utils/logger');
+const productRoutes = require('./routes/productRoutes');
 
 const app = express();
 
@@ -11,7 +12,9 @@ app.use((req, res, next) => {
   next();
 });
 
-app.use('/api', routes);
+//app.use('/api', routes);
+
+app.use('/products', productRoutes);
 
 // Health
 app.get('/', (req, res) => res.send({ status: 'ok', service: 'SmartShop Lite' }));
