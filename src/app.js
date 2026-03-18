@@ -10,60 +10,107 @@
 const express = require('express');
 const app = express();
 
-const PORT = process.env.PORT || 3000;
-
-// In-memory sample product data
-// Each product has: id (number), name (string), price (number)
-// NOTE: This preserves the original sample products and adds one more example.
-const products = [
-  { id: 1, name: 'Basic T-shirt', price: 9.99 },
-  { id: 2, name: 'Coffee Mug', price: 7.5 },
-  { id: 3, name: 'Wireless Mouse', price: 19.99 },
-  { id: 4, name: 'Notebook', price: 4.25 }
-];
-
-// Middleware to parse JSON bodies (useful if you add POST/PUT later)
+// Middleware to parse JSON request bodies
 app.use(express.json());
 
-// Root route - simple health/info message
-app.get('/', (req, res) => {
-  res.send('SmartShop Lite API is running. Use /products to see the product list.');
-});
+/**
+ * Sample in-memory product data
+ * In real applications, this would come from a database
+ */
+const products = [
+  { id: 1, name: "iPhone", price: 800 },
+  { id: 2, name: "Samsung Galaxy", price: 700 },
+  { id: 3, name: "Laptop", price: 1200 },
+  { id: 4, name: "Headphones", price: 150 }
+];
 
-// GET /products - return list of all products
+/**
+ * In-memory shopping cart
+ */
+let cart = [];
+
+/**
+ * GET /products
+ * Returns all products or filters them by search query
+ */
 app.get('/products', (req, res) => {
-  // For beginners: we just return the in-memory array as JSON
+  const { search } = req.query;
+
+  if (search) {
+    const filteredProducts = products.filter(product =>
+      product.name.toLowerCase().includes(search.toLowerCase())
+    );
+    return res.json(filteredProducts);
+  }
+
   res.json(products);
 });
 
-// GET /products/:id - return details for a single product
+/**
+ * GET /products/:id
+ * Returns a single product by ID
+ */
 app.get('/products/:id', (req, res) => {
-  // Convert id from string to number
-  const id = Number(req.params.id);
+  const productId = parseInt(req.params.id);
 
-  // Validate id is a valid number
-  if (Number.isNaN(id)) {
-    return res.status(400).json({ error: 'Product id must be a number.' });
-  }
+  const product = products.find(p => p.id === productId);
 
-  // Find product by id
-  const product = products.find(p => p.id === id);
-
-  // If not found, return 404
   if (!product) {
-    return res.status(404).json({ error: `Product with id ${id} not found.` });
+    return res.status(404).json({ message: "Product not found" });
   }
 
-  // Return the product as JSON
   res.json(product);
 });
 
-// Basic 404 handler for unknown routes (should be added after other routes)
-app.use((req, res) => {
-  res.status(404).json({ error: 'Route not found.' });
+/**
+ * POST /cart
+ * Adds a product to the cart
+ */
+app.post('/cart', (req, res) => {
+  const { id } = req.body;
+
+  const product = products.find(p => p.id === id);
+
+  if (!product) {
+    return res.status(404).json({ message: "Product not found" });
+  }
+
+  cart.push(product);
+
+  res.json({
+    message: "Product added to cart",
+    cart
+  });
 });
 
-// Start the server
+/**
+ * DELETE /cart/:id
+ * Removes a product from the cart
+ */
+app.delete('/cart/:id', (req, res) => {
+  const productId = parseInt(req.params.id);
+
+  cart = cart.filter(item => item.id !== productId);
+
+  res.json({
+    message: "Product removed from cart",
+    cart
+  });
+});
+
+/**
+ * GET /cart
+ * Returns all items in the cart
+ */
+app.get('/cart', (req, res) => {
+  res.json(cart);
+});
+
+/**
+ * Start the server
+ */
+const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
-  console.log(`SmartShop Lite server started on port ${PORT}`);
+  console.log(`SmartShop Lite server running on port ${PORT}`);
 });
